@@ -35,6 +35,7 @@ common common-imports
     , cardano-cli
     , cardano-crypto
     , cardano-crypto-wrapper
+    , cardano-data
     , cardano-ledger-core
     , cardano-ledger-shelley
     , cardano-slotting

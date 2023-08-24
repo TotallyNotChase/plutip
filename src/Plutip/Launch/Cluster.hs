@@ -205,8 +205,9 @@ import Data.IntCast
     ( intCast )
 import Data.List
     ( intercalate, nub, permutations, sort )
-import Data.Map
-    ( Map )
+import qualified Data.ListMap as LM
+import Data.ListMap
+    ( ListMap )
 import Data.Maybe
     ( catMaybes, fromMaybe, isJust )
 import Data.Text
@@ -600,11 +601,11 @@ configurePool tr baseDir metadataServer recipe = do
                   }
 
               updateStaking sgs = sgs
-                { Ledger.sgsPools = Map.singleton poolId params <> sgsPools sgs
-                , Ledger.sgsStake = Map.singleton stakePubHash poolId <> Ledger.sgsStake sgs
+                { Ledger.sgsPools = LM.fromMap (Map.singleton poolId params) <> sgsPools sgs
+                , Ledger.sgsStake = LM.fromMap (Map.singleton stakePubHash poolId) <> Ledger.sgsStake sgs
                 }
 
-              poolSpecificFunds = Map.fromList
+              poolSpecificFunds = LM.fromList
                     [(pledgeAddr, Ledger.Coin $ intCast pledgeAmt)]
             return $ \sg -> sg
                 { sgInitialFunds = poolSpecificFunds <> sgInitialFunds sg
@@ -771,7 +772,7 @@ generateGenesis dir systemStart initialFunds addPoolsToGenesis extraConf = do
     let startTime = round @_ @Int . utcTimeToPOSIXSeconds $ systemStart
     let systemStart' = posixSecondsToUTCTime . fromRational . toRational $ startTime
 
-    let pparams = Ledger.PParams
+    let pparams = Ledger.ShelleyPParams
             { _minfeeA = 100
             , _minfeeB = 100000
             , _minUTxOValue = Ledger.Coin 1_000_000
@@ -847,8 +848,8 @@ generateGenesis dir systemStart initialFunds addPoolsToGenesis extraConf = do
         }
 
   where
-    extraInitialFunds :: Map (Ledger.Addr (Crypto StandardShelley)) Ledger.Coin
-    extraInitialFunds = Map.fromList
+    extraInitialFunds :: ListMap (Ledger.Addr (Crypto StandardShelley)) Ledger.Coin
+    extraInitialFunds = LM.fromList
         [ (fromMaybe (error "extraFunds: invalid addr") $ Ledger.deserialiseAddr addrBytes
          , Ledger.Coin $ intCast c)
         | (Address addrBytes, Coin c) <- initialFunds
